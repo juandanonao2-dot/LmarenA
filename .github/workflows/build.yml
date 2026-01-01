@@ -1,0 +1,20 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: pip install buildozer
+    - run: buildozer -v android debug
+    - uses: actions/upload-artifact@v4
+      with:
+        name: lmarena-apk
+        path: bin/*.apk
