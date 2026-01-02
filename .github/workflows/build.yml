@@ -48,35 +48,27 @@ jobs:
 
       - name: Pre-download Android NDK r25c & SDK (IPv4)
         run: |
-          # Força o uso de IPv4 para dl.google.com para evitar errno 101
+          # remove IPv6 e fixa IPv4 no kernel e no hosts
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sed -i '/dl.google.com/d' /etc/hosts
           echo "142.250.189.206 dl.google.com" | sudo tee -a /etc/hosts
-          
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
-          
-          # Baixa o NDK apenas se não existir no cache
-          if [ ! -f android-ndk-r25c-linux-x86_64.zip ]; then
-            wget -q --inet4-only https://dl.google.com/android/repository/android-ndk-r25c-linux-x86_64.zip
-          fi
-          
-          if [ ! -d android-ndk-r25c ]; then
-            unzip -q android-ndk-r25c-linux-x86_64.zip
-          fi
+          # baixa só se não existir (usando IPv4 puro e timeout)
+          [ ! -f android-ndk-r25c-linux-x86_64.zip ] && \
+            wget -4 -q --timeout=30 https://dl.google.com/android/repository/android-ndk-r25c-linux-x86_64.zip
+          [ ! -d android-ndk-r25c ] && unzip -q android-ndk-r25c-linux-x86_64.zip
         shell: bash
 
       - name: Build APK (licenças + build em um gole)
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$PATH
-          
-          # Aceita licenças globalmente no shell atual
+          # aceita licenças no ambiente atual
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
-          
-          # Instala build-tools necessárias
+          # garante build-tools
           sdkmanager --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
-          
-          # Executa o buildozer
+          # executa buildozer
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
 
