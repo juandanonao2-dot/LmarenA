@@ -36,11 +36,12 @@ jobs:
 
       - name: Aceitar licenças e instalar build-tools 36.1.0
         run: |
+          set -x                 # bash debug ON
           mkdir -p $ANDROID_SDK_ROOT/licenses
           echo 84831b9409646a918e30573bab4c9c91346d8abd > $ANDROID_SDK_ROOT/licenses/android-sdk-license
-          sdkmanager --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
+          sdkmanager --verbose --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
           echo "$ANDROID_SDK_ROOT/build-tools/36.1.0" >> $GITHUB_PATH
-          which aidl
+          ls -la $ANDROID_SDK_ROOT/build-tools/36.1.0
       - name: Lista tudo que existe em build-tools/36.1.0
         run: ls -la $ANDROID_SDK_ROOT/build-tools/36.1.0    
       - name: Build APK
