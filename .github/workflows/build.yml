@@ -29,22 +29,25 @@ jobs:
           pip install "cython<3.0.0"
           pip install buildozer
 
-      - name: Setup Android SDK (Base)
+      - name: Cache SDK + instalar cmdline-tools
         run: |
+          # Criar estrutura correta para o SDK Manager
+          mkdir -p ~/android-sdk/cmdline-tools
+          cd ~/android-sdk/cmdline-tools
+          
+          # Download da versão estável das ferramentas de linha de comando
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q commandlinetools-linux-9477386_latest.zip
+          
+          # O unzip cria uma pasta 'cmdline-tools', precisamos movê-la para 'latest'
+          mv cmdline-tools latest
+          
           export ANDROID_SDK_ROOT=$HOME/android-sdk
-          mkdir -p $ANDROID_SDK_ROOT/{cmdline-tools,licenses}
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-
-      - name: Cache NDK/SDK
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            ~/android-sdk
-          key: ${{ runner.os }}-ndk-r25c-sdk36
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+          
+          # Aceitar licenças agora que o binário está no lugar certo
+          yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
+        shell: bash
 
       - name: Cache + Download Android NDK r25c
         run: |
@@ -60,9 +63,11 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
-          # Aceita todas as licenças e ignora erro se já estiverem aceitas
+          
+          # Garantir licenças uma última vez antes do build
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
-          # Executa o buildozer (release ou debug conforme sua necessidade)
+          
+          # Iniciar o build
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
@@ -72,3 +77,4 @@ jobs:
         with:
           name: lmarena-apk
           path: bin/*.apk
+
