@@ -52,14 +52,20 @@ jobs:
             ~/android-sdk
           key: ${{ runner.os }}-ndk-r25c-sdk36
 
-      - name: Cache + Baixar Android NDK r25c
+      - name: Desativar IPv6 e baixar NDK
         run: |
+          # Desativa IPv6 no nível do kernel para forçar IPv4 puro
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+          
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          # TRUQUE: Limpa o ZIP e a pasta antes de qualquer coisa para evitar arquivos corrompidos no cache
+          
+          # Limpeza total antes do download
           rm -rf "$ZIP" android-ndk-r25c
+          
+          # Download forçando IPv4 (-4)
           wget -4 -q --timeout=60 -O "$ZIP" https://dl.google.com/android/repository/$ZIP
           unzip -qo "$ZIP"
         shell: bash
@@ -75,7 +81,10 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          
+          # Garante licenças e evita travar se já existirem
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
+          
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
@@ -92,4 +101,3 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh run list -R juandononao2-dot/Lmar --status=failure -L 20 | awk '{print $7}' | xargs -I{} gh run delete -R juandononao2-dot/Lmar {} || true
-
