@@ -10,3 +10,4 @@ orientation = portrait
 android.permissions = INTERNET
 [buildozer]
 warn_on_root = 0
+
