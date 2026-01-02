@@ -9,13 +9,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
--uses: actions/chekout#v4
-     - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+     -uses: actions/chekout#v4
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
           
-      name: Definir ANDROID_HOME  
-        run: echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+    -name: Definir ANDROID_HOME  
+     run: echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         
      - name: Instalar Android SDK Command-Line Tools
   run: |
