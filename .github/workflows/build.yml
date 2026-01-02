@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write  # Necessário para deletar runs antigos
+  actions: write
   contents: read
 
 jobs:
@@ -58,8 +58,9 @@ jobs:
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
+          # TRUQUE: Limpa o ZIP e a pasta antes de qualquer coisa para evitar arquivos corrompidos no cache
+          rm -rf "$ZIP" android-ndk-r25c
           wget -4 -q --timeout=60 -O "$ZIP" https://dl.google.com/android/repository/$ZIP
-          rm -rf android-ndk-r25c
           unzip -qo "$ZIP"
         shell: bash
 
@@ -86,8 +87,9 @@ jobs:
           path: bin/*.apk
 
       - name: Limpar Workflows que Falharam (gh CLI)
-        if: always() # Garante que rode mesmo que o build falhe
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh run list -R juandononao2-dot/Lmar --status=failure -L 20 | awk '{print $7}' | xargs -I{} gh run delete -R juandononao2-dot/Lmar {} || true
+
