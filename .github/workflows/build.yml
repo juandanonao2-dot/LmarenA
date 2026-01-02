@@ -36,26 +36,18 @@ jobs:
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip -q commandlinetools-linux-11076708_latest.zip -d $ANDROID_SDK_ROOT/cmdline-tools
           mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          
-          # Garante a existência do SDK para o próximo step
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
-      - name: Build APK (Buildozer com SDK no bolso)
+      - name: Build APK (licenças + build em um gole)
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          
-          # Força instalação das ferramentas necessárias e aceita licenças no mesmo shell
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$PATH
+          # aceita tudo de uma vez
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
-          sdkmanager --install "build-tools;36.1.0" "platform-tools" "platforms;android-34" --sdk_root=$ANDROID_SDK_ROOT
-          
-          # Roda o Buildozer com aviso de root desativado para o CI
-          export BUILDOZER_WARN_ON_ROOT=0
+          # instala/verifica build-tools 36.1.0
+          sdkmanager --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
+          # só então roda o buildozer
           buildozer -v android debug
-        env:
-          # Variáveis para forçar o Buildozer a não baixar outro SDK
-          ANDROID_SDK_PATH: /home/runner/android-sdk
-          ANDROID_HOME: /home/runner/android-sdk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
