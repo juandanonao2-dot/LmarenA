@@ -49,22 +49,20 @@ jobs:
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         shell: bash
 
-      - name: Cache NDK/SDK
+      - name: Cache NDK
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.buildozer
-            ~/android-sdk
-          key: ${{ runner.os }}-ndk-r25c-sdk36
+          path: ~/.buildozer/android/android-ndk-r25c
+          key: ndk-r25c-${{ hashFiles('.github/workflows/build.yml') }}
 
       - name: Cache + Baixar Android NDK r25c
         run: |
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          # Limpeza agressiva para evitar Exit 9
+          # Limpeza total antes do download para evitar Exit 9
           rm -rf "$ZIP" android-ndk-r25c
-          # Download forçando IPv4
+          # Download forçando IPv4 (-4) para evitar Exit 8
           wget -4 -q --timeout=60 -O "$ZIP" https://dl.google.com/android/repository/$ZIP
           unzip -qo "$ZIP"
         shell: bash
@@ -97,3 +95,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh run list -R juandononao2-dot/Lmar --status=failure -L 20 | awk '{print $7}' | xargs -I{} gh run delete -R juandononao2-dot/Lmar {} || true
+
