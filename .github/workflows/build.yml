@@ -13,6 +13,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Desativar IPv6 globalmente
+        run: |
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -52,20 +57,14 @@ jobs:
             ~/android-sdk
           key: ${{ runner.os }}-ndk-r25c-sdk36
 
-      - name: Desativar IPv6 e baixar NDK
+      - name: Cache + Baixar Android NDK r25c
         run: |
-          # Desativa IPv6 no nível do kernel para forçar IPv4 puro
-          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
-          
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          
-          # Limpeza total antes do download
+          # Limpeza agressiva para evitar Exit 9
           rm -rf "$ZIP" android-ndk-r25c
-          
-          # Download forçando IPv4 (-4)
+          # Download forçando IPv4
           wget -4 -q --timeout=60 -O "$ZIP" https://dl.google.com/android/repository/$ZIP
           unzip -qo "$ZIP"
         shell: bash
@@ -81,10 +80,7 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          
-          # Garante licenças e evita travar se já existirem
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
-          
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
