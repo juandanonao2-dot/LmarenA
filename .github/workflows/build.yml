@@ -36,8 +36,8 @@ jobs:
 
       - name: Aceitar licenças e instalar build-tools
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "build-tools;36.1.0"
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "build-tools;36.1.0" --sdk_root=${ANDROID_SDK_ROOT}
 
       - name: Build APK
         run: buildozer -v android debug
