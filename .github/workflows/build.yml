@@ -17,6 +17,8 @@ jobs:
           
       - name: Definir ANDROID_HOME  
         run: echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
         
       - name: Instalar Android SDK Command-Line Tools
         run: |
