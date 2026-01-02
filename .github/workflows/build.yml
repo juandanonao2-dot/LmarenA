@@ -29,7 +29,7 @@ jobs:
           pip install "cython<3.0.0"
           pip install buildozer
 
-      - name: Setup Android SDK + Build-Tools 36.1.0
+      - name: Setup Android SDK (Base)
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/{cmdline-tools,licenses}
@@ -37,32 +37,25 @@ jobs:
           unzip -q commandlinetools-linux-11076708_latest.zip -d $ANDROID_SDK_ROOT/cmdline-tools
           mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
           
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$PATH
+          # Garante a existência do SDK para o próximo step
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+      - name: Build APK (Buildozer com SDK no bolso)
+        run: |
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$ANDROID_SDK_ROOT/platform-tools:$PATH
           
-          # Instalação inicial
+          # Força instalação das ferramentas necessárias e aceita licenças no mesmo shell
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
           sdkmanager --install "build-tools;36.1.0" "platform-tools" "platforms;android-34" --sdk_root=$ANDROID_SDK_ROOT
           
-          # Exportando variáveis para o ambiente do GitHub
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_SDK_ROOT/build-tools/36.1.0" >> $GITHUB_PATH
-
-      - name: Aceitar todas as licenças do Android SDK
-        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-
-      - name: Build APK com Buildozer
-        run: |
-          # Força o Buildozer a usar o SDK que configuramos e aceita licenças internamente
+          # Roda o Buildozer com aviso de root desativado para o CI
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         env:
-          ANDROID_SDK_PATH: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
+          # Variáveis para forçar o Buildozer a não baixar outro SDK
+          ANDROID_SDK_PATH: /home/runner/android-sdk
+          ANDROID_HOME: /home/runner/android-sdk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
