@@ -56,18 +56,19 @@ jobs:
           [ ! -d android-ndk-r25c ] && unzip -q android-ndk-r25c-linux-x86_64.zip
         shell: bash
 
-      - name: Build APK (licenças + build em um gole)
+      - name: Aceitar licenças SDK + Build APK
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$PATH
-          yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
-          sdkmanager --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+          # Aceita todas as licenças e ignora erro se já estiverem aceitas
+          yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
+          # Executa o buildozer (release ou debug conforme sua necessidade)
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
+        shell: bash
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: lmarena-apk
           path: bin/*.apk
-
