@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  actions: write  # Necessário para deletar runs antigos
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -54,35 +58,23 @@ jobs:
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          
-          # Download direto com overwrite no wget
-          wget -4 -q --timeout=60 -O "$ZIP" \
-            https://dl.google.com/android/repository/$ZIP
-          
-          # Limpa pasta antiga para evitar conflitos de extração
+          wget -4 -q --timeout=60 -O "$ZIP" https://dl.google.com/android/repository/$ZIP
           rm -rf android-ndk-r25c
-          # -q (quiet) e -o (overwrite) para garantir Exit 0
           unzip -qo "$ZIP"
         shell: bash
 
       - name: Linkar NDK no lugar certo
         run: |
           mkdir -p ~/.buildozer/android/platform
-          ln -sfn ~/.buildozer/android/android-ndk-r25c \
-                  ~/.buildozer/android/platform/android-ndk-r25c
-          ln -sfn ~/.buildozer/android/android-ndk-r25c \
-                  ~/.buildozer/android/platform/ndk-bundle
+          ln -sfn ~/.buildozer/android/android-ndk-r25c ~/.buildozer/android/platform/android-ndk-r25c
+          ln -sfn ~/.buildozer/android/android-ndk-r25c ~/.buildozer/android/platform/ndk-bundle
         shell: bash
 
       - name: Aceitar licenças SDK + Build APK
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          
-          # Garante licenças
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
-          
-          # Executa o buildozer
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
@@ -93,3 +85,9 @@ jobs:
           name: lmarena-apk
           path: bin/*.apk
 
+      - name: Limpar Workflows que Falharam (gh CLI)
+        if: always() # Garante que rode mesmo que o build falhe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run list -R juandononao2-dot/Lmar --status=failure -L 20 | awk '{print $7}' | xargs -I{} gh run delete -R juandononao2-dot/Lmar {} || true
