@@ -49,31 +49,28 @@ jobs:
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         shell: bash
 
-      - name: Forçar novo download do NDK
+      - name: Limpar cache e baixar NDK correto
         run: |
-          # Garante IPv4 e limpeza total de resíduos
+          # Força IPv4 e remove qualquer rastro de NDK anterior
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
-          rm -rf ~/.buildozer/android
-          mkdir -p ~/.buildozer/android
+          rm -rf ~/.buildozer/android /opt/android-ndk-* mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           
-          # Download do NDK r25c (Linux x86_64)
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          URL=https://dl.google.com/android/repository/$ZIP
+          # Download com headers (-S) e forçando IPv4 (-4)
+          wget -4 -S --timeout=60 -O "$ZIP" \
+            https://dl.google.com/android/repository/android-ndk-r25c-linux-x86_64.zip
           
-          # -S mostra os headers (bom para ver o 200 OK ou 404)
-          wget -4 -S --timeout=60 -O "$ZIP" "$URL"
           unzip -qo "$ZIP"
-          
-          # Monitora o tamanho para garantir integridade
-          echo "--- Tamanho da pasta após extração ---"
-          du -sh .
+          # Verifica o tamanho final para confirmar se o download foi completo
+          du -sh . || true
         shell: bash
 
       - name: Linkar NDK no lugar certo
         run: |
           mkdir -p ~/.buildozer/android/platform
+          # Cria links simbólicos para os locais onde o Buildozer costuma procurar
           ln -sfn ~/.buildozer/android/android-ndk-r25c ~/.buildozer/android/platform/android-ndk-r25c
           ln -sfn ~/.buildozer/android/android-ndk-r25c ~/.buildozer/android/platform/ndk-bundle
         shell: bash
@@ -82,6 +79,8 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          
+          # Garante aceitação de licenças
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
           
           export BUILDOZER_WARN_ON_ROOT=0
