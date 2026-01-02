@@ -41,6 +41,8 @@ jobs:
           sdkmanager --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
           echo "$ANDROID_SDK_ROOT/build-tools/36.1.0" >> $GITHUB_PATH
           which aidl
+      - name: Lista tudo que existe em build-tools/36.1.0
+        run: ls -la $ANDROID_SDK_ROOT/build-tools/36.1.0    
       - name: Build APK
         run: buildozer -v android debug
 
