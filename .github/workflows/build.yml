@@ -46,7 +46,7 @@ jobs:
             ~/android-sdk
           key: ${{ runner.os }}-ndk-r25c-sdk36
 
-      - name: Pré-download Android NDK r25c & SDK (IPv4)
+      - name: Cache + Download Android NDK r25c
         run: |
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           mkdir -p ~/.buildozer/android
