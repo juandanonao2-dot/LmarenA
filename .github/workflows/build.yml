@@ -31,21 +31,21 @@ jobs:
 
       - name: Cache SDK + instalar cmdline-tools
         run: |
-          # Criar estrutura correta para o SDK Manager
           mkdir -p ~/android-sdk/cmdline-tools
           cd ~/android-sdk/cmdline-tools
-          
-          # Download da versão estável das ferramentas de linha de comando
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q commandlinetools-linux-9477386_latest.zip
-          
-          # O unzip cria uma pasta 'cmdline-tools', precisamos movê-la para 'latest'
           mv cmdline-tools latest
           
+          # Persistir variáveis para steps futuros que não usem export manual
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Exportar paths + aceitar licenças
+        run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
-          
-          # Aceitar licenças agora que o binário está no lugar certo
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
         shell: bash
 
@@ -62,12 +62,11 @@ jobs:
       - name: Aceitar licenças SDK + Build APK
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           
-          # Garantir licenças uma última vez antes do build
+          # Garante licenças e roda buildozer
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
           
-          # Iniciar o build
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
