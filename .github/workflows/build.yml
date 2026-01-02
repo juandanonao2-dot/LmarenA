@@ -46,15 +46,11 @@ jobs:
             ~/android-sdk
           key: ${{ runner.os }}-ndk-r25c-sdk36
 
-      - name: Pre-download Android NDK r25c & SDK (IPv4)
+      - name: Pré-download Android NDK r25c & SDK (IPv4)
         run: |
-          # remove IPv6 e fixa IPv4 no kernel e no hosts
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-          sudo sed -i '/dl.google.com/d' /etc/hosts
-          echo "142.250.189.206 dl.google.com" | sudo tee -a /etc/hosts
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
-          # baixa só se não existir (usando IPv4 puro e timeout)
           [ ! -f android-ndk-r25c-linux-x86_64.zip ] && \
             wget -4 -q --timeout=30 https://dl.google.com/android/repository/android-ndk-r25c-linux-x86_64.zip
           [ ! -d android-ndk-r25c ] && unzip -q android-ndk-r25c-linux-x86_64.zip
@@ -64,11 +60,8 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$PATH
-          # aceita licenças no ambiente atual
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
-          # garante build-tools
           sdkmanager --install "build-tools;36.1.0" --sdk_root=$ANDROID_SDK_ROOT
-          # executa buildozer
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
 
