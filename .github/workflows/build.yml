@@ -1,11 +1,3 @@
-- name: Instalar buildozer e Cython
-  run: |
-    pip install --upgrade pip
-    pip install cython
-    pip install buildozer
-    
-  -name: Criar APK
-
 on:
   push:
     branches: [ main ]
@@ -17,12 +9,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Instalar buildozer e Cython
+        run: |
+          pip install --upgrade pip
+          pip install cython
+          pip install buildozer
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
   
       - name: Definir ANDROID_HOME  
         run: echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         
@@ -34,8 +33,6 @@ jobs:
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Aceitar licenças e instalar build-tools
         run: |
