@@ -54,23 +54,22 @@ jobs:
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          URL=https://dl.google.com/android/repository/$ZIP
-          if [ ! -f "$ZIP" ] || [ $(stat -c%s "$ZIP" 2>/dev/null || echo 0) -lt 500000000 ]; then
-            wget -4 -q --timeout=60 -O "$ZIP.tmp" "$URL" && mv "$ZIP.tmp" "$ZIP"
-          fi
-          if [ ! -d "android-ndk-r25c" ]; then
-            unzip -q "$ZIP"
-          fi
+          
+          # Download direto com overwrite no wget
+          wget -4 -q --timeout=60 -O "$ZIP" \
+            https://dl.google.com/android/repository/$ZIP
+          
+          # Limpa pasta antiga para evitar conflitos de extração
+          rm -rf android-ndk-r25c
+          # -q (quiet) e -o (overwrite) para garantir Exit 0
+          unzip -qo "$ZIP"
         shell: bash
 
       - name: Linkar NDK no lugar certo
         run: |
-          # Cria a estrutura de pastas que o Buildozer espera
           mkdir -p ~/.buildozer/android/platform
-          # Cria o link simbólico apontando para a pasta real descompactada
           ln -sfn ~/.buildozer/android/android-ndk-r25c \
                   ~/.buildozer/android/platform/android-ndk-r25c
-          # Link alternativo para compatibilidade total
           ln -sfn ~/.buildozer/android/android-ndk-r25c \
                   ~/.buildozer/android/platform/ndk-bundle
         shell: bash
@@ -83,7 +82,7 @@ jobs:
           # Garante licenças
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
           
-          # Buildozer final
+          # Executa o buildozer
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
@@ -93,3 +92,4 @@ jobs:
         with:
           name: lmarena-apk
           path: bin/*.apk
+
