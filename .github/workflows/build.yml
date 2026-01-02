@@ -13,10 +13,14 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Instalar dependências
-        run: |
-          sudo apt update && sudo apt install -y python3-pip openjdk-17-jdk
-          python -m pip install --upgrade pip
+          
+      - name: Aceitar licenças e instalar AIDL  
+        run: |  
+          sudo apt update  
+          sudo apt install -y android-sdk aidl  
+          yes | sudo sdkmanager --licenses  
+          sudo sdkmanager "build-tools;36.1.0"
+          
           pip install cython buildozer
       - name: Build APK
         run: |
