@@ -49,22 +49,26 @@ jobs:
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         shell: bash
 
-      - name: Cache NDK
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer/android/android-ndk-r25c
-          key: ndk-r25c-${{ hashFiles('.github/workflows/build.yml') }}
-
-      - name: Cache + Baixar Android NDK r25c
+      - name: Forçar novo download do NDK
         run: |
+          # Garante IPv4 e limpeza total de resíduos
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+          rm -rf ~/.buildozer/android
           mkdir -p ~/.buildozer/android
           cd ~/.buildozer/android
+          
+          # Download do NDK r25c (Linux x86_64)
           ZIP=android-ndk-r25c-linux-x86_64.zip
-          # Limpeza total antes do download para evitar Exit 9
-          rm -rf "$ZIP" android-ndk-r25c
-          # Download forçando IPv4 (-4) para evitar Exit 8
-          wget -4 -q --timeout=60 -O "$ZIP" https://dl.google.com/android/repository/$ZIP
+          URL=https://dl.google.com/android/repository/$ZIP
+          
+          # -S mostra os headers (bom para ver o 200 OK ou 404)
+          wget -4 -S --timeout=60 -O "$ZIP" "$URL"
           unzip -qo "$ZIP"
+          
+          # Monitora o tamanho para garantir integridade
+          echo "--- Tamanho da pasta após extração ---"
+          du -sh .
         shell: bash
 
       - name: Linkar NDK no lugar certo
@@ -79,6 +83,7 @@ jobs:
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
+          
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
