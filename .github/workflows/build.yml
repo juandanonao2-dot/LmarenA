@@ -34,10 +34,11 @@ jobs:
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
-      - name: Aceitar licenças e instalar build-tools
+      - name: Aceitar licenças e instalar tudo de uma vez
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager --install "build-tools;36.1.0" --sdk_root=${ANDROID_SDK_ROOT}
+          mkdir -p $ANDROID_SDK_ROOT/licenses
+          echo 24333f8a63b6825ea9c5514f83c2829b004d1dd > $ANDROID_SDK_ROOT/licenses/android-sdk-license
+          sdkmanager --install "build-tools;36.1.0" "platforms;android-36" --sdk_root=${ANDROID_SDK_ROOT}
 
       - name: Build APK
         run: buildozer -v android debug
