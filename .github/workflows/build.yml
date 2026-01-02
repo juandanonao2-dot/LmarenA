@@ -1,4 +1,10 @@
-name: Criar APK
+- name: Instalar buildozer e Cython
+  run: |
+    pip install --upgrade pip
+    pip install cython
+    pip install buildozer
+    
+  -name: Criar APK
 
 on:
   push:
