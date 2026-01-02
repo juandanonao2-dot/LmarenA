@@ -20,52 +20,45 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            git \
-            python3-dev \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libgstreamer1.0 \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            libsqlite3-dev \
-            sqlite3 \
-            bzip2 \
-            libbz2-dev \
-            libssl-dev \
-            openssl \
-            libgdbm-dev \
-            liblzma-dev \
-            tk-dev \
-            libffi-dev \
-            uuid-dev \
-            libreadline-dev \
-            zip \
-            unzip
+          sudo apt-get install -y build-essential git python3-dev zip unzip wget \
+          libffi-dev libssl-dev autoconf libtool pkg-config zlib1g-dev
 
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
-          pip install "cython<3.0.0"  # Versão recomendada para estabilidade com Kivy/Buildozer
+          pip install "cython<3.0.0"
           pip install buildozer
 
-      - name: Build with Buildozer
+      - name: Setup Android SDK + Build-Tools 36.1.0
         run: |
-          # O Buildozer baixa o SDK/NDK automaticamente se não encontrar
-          # Isso evita conflitos manuais de path no GitHub Actions
-          yes | buildozer -v android debug
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/{cmdline-tools,licenses}
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          
+          # Configuração de PATH temporário para execução local
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/36.1.0:$PATH
+          
+          # Aceitar licenças e instalar build-tools
+          yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
+          sdkmanager --install "build-tools;36.1.0" "platform-tools" "platforms;android-34" --sdk_root=$ANDROID_SDK_ROOT
+          
+          # Persistir variáveis para os próximos steps
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/build-tools/36.1.0" >> $GITHUB_PATH
+
+      - name: Build APK com Buildozer
+        run: |
+          # Passamos os caminhos do seu SDK manual para o Buildozer via variáveis de ambiente
+          export BUILDOZER_WARN_ON_ROOT=0
+          buildozer -v android debug
         env:
-          # Aceita licenças automaticamente em ambiente CI
-          APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
+          ANDROID_SDK_PATH: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_NDK_PATH: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r25b # Exemplo de caminho padrão
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
