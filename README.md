@@ -62,3 +62,4 @@ jobs:
         with:
           name: lmarena-apk
           path: bin/*.apk
+ 
