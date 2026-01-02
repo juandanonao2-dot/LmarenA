@@ -55,29 +55,35 @@ jobs:
           cd ~/.buildozer/android
           ZIP=android-ndk-r25c-linux-x86_64.zip
           URL=https://dl.google.com/android/repository/$ZIP
-          # Força novo download se o arquivo não existir ou for menor que 500MB (corrompido)
           if [ ! -f "$ZIP" ] || [ $(stat -c%s "$ZIP" 2>/dev/null || echo 0) -lt 500000000 ]; then
-            echo "Arquivo ausente ou incompleto. Iniciando download..."
-            wget -4 -q --timeout=60 --show-progress -O "$ZIP.tmp" "$URL" && mv "$ZIP.tmp" "$ZIP"
+            wget -4 -q --timeout=60 -O "$ZIP.tmp" "$URL" && mv "$ZIP.tmp" "$ZIP"
           fi
-          # Unzip apenas se a pasta do NDK não existir
           if [ ! -d "android-ndk-r25c" ]; then
             unzip -q "$ZIP"
           fi
         shell: bash
 
-      - name: Exportar paths + aceitar licenças
+      - name: Linkar NDK no lugar certo
         run: |
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
+          # Cria a estrutura de pastas que o Buildozer espera
+          mkdir -p ~/.buildozer/android/platform
+          # Cria o link simbólico apontando para a pasta real descompactada
+          ln -sfn ~/.buildozer/android/android-ndk-r25c \
+                  ~/.buildozer/android/platform/android-ndk-r25c
+          # Link alternativo para compatibilidade total
+          ln -sfn ~/.buildozer/android/android-ndk-r25c \
+                  ~/.buildozer/android/platform/ndk-bundle
         shell: bash
 
       - name: Aceitar licenças SDK + Build APK
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          
+          # Garante licenças
           yes | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
+          
+          # Buildozer final
           export BUILDOZER_WARN_ON_ROOT=0
           buildozer -v android debug
         shell: bash
